@@ -1,1 +1,98 @@
+/* =============================================================================
+   PROJECT: Global Education Investment vs. Economic Output (2012–2022)
+   PURPOSE: Data Transformation, Trend Analysis, and Performance Benchmarking
+   =============================================================================
+*/
 
+-- 1. GLOBAL MEDIAN EDUCATION SPENDING (2022)
+-- Normalizes fiscal effort to establish a global baseline
+SELECT
+    AVG(edu_spent_pct) AS global_avg_edu_spent
+FROM edu_gdp
+WHERE year = 2022;
+
+
+-- 2. TOP INVESTOR IDENTIFICATION (2022)
+-- Identifies the nation with the highest percentage of GDP allocated to education
+SELECT 
+    country_name, 
+    edu_spent_pct AS most_edu_spent
+FROM edu_gdp
+WHERE year = 2022
+ORDER BY edu_spent_pct DESC 
+LIMIT 1;
+
+
+-- 3. YEAR-OVER-YEAR (YoY) EXPENDITURE TRENDS
+-- Uses CTEs to compare global fiscal effort between consecutive years
+WITH eduspent_2021 AS (
+    SELECT AVG(edu_spent_pct) AS avg_spent_2021
+    FROM edu_gdp
+    WHERE year = 2021 
+),
+eduspent_2022 AS (
+    SELECT AVG(edu_spent_pct) AS avg_spent_2022
+    FROM edu_gdp  
+    WHERE year = 2022
+)
+SELECT 
+    avg_spent_2021,
+    avg_spent_2022,
+    (avg_spent_2022 - avg_spent_2021) AS yoy_abs_diff,
+    ((avg_spent_2022 - avg_spent_2021) / NULLIF(avg_spent_2021, 0)) * 100 AS yoy_pct_growth
+FROM eduspent_2021, eduspent_2022;
+
+
+-- 4. PPP PERFORMANCE BENCHMARKING (10-YEAR SCOPE)
+-- Calculates the % of nations outperforming the 10-year global PPP average
+WITH Global_Benchmark AS (
+    SELECT AVG(gdp_ppp) AS global_avg
+    FROM ppp_gdp_edu_dim
+    WHERE year BETWEEN 2012 AND 2022
+),
+Country_Performance AS ( 
+    SELECT 
+        country_name, 
+        AVG(gdp_ppp) AS avg_country_ppp
+    FROM ppp_gdp_edu_dim
+    WHERE year BETWEEN 2012 AND 2022
+    GROUP BY country_name
+)
+SELECT 
+    (SUM(CASE WHEN cp.avg_country_ppp > gb.global_avg THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) AS pct_nations_above_avg
+FROM Country_Performance cp 
+CROSS JOIN Global_Benchmark gb;
+
+
+-- 5. ADVANCED TRANSFORMATION FOR POWER BI (WINDOW FUNCTIONS)
+-- Implements LAG() for time-series analysis and windowed averages for efficiency tagging
+WITH ppp_base AS (
+    SELECT 
+        country_name,
+        country_code, 
+        year,
+        gdp_ppp,
+        -- Window Function: Accesses previous year's value for YoY calculation
+        LAG(gdp_ppp) OVER (
+            PARTITION BY country_code 
+            ORDER BY year
+        ) AS prev_year_ppp,
+        -- Window Function: Calculates global 10-year average across all rows
+        AVG(gdp_ppp) OVER() AS global_avg_10yrs
+    FROM ppp_gdp_edu_dim
+    WHERE year BETWEEN 2012 AND 2022
+)
+SELECT 
+    country_name,
+    country_code,
+    year,
+    gdp_ppp,
+    prev_year_ppp,
+    (gdp_ppp - prev_year_ppp) AS yoy_diff_abs,
+    ((gdp_ppp - prev_year_ppp) / NULLIF(prev_year_ppp, 0)) * 100 AS yoy_diff_pct,
+    -- Binary flag for "Investment Efficiency" Analysis
+    CASE 
+        WHEN gdp_ppp > global_avg_10yrs THEN 1 
+        ELSE 0 
+    END AS is_above_global_avg
+FROM ppp_base;
