@@ -11,7 +11,7 @@ Does higher education spending actually drive wealth? This study analyzes 10 yea
 
 ## 🛠️ Tech Stack & Assets
 * **SQL:** Data cleaning & YoY growth analysis using Window Functions. [View Scripts](./scripts/).
-* **Power BI:** Interactive dashboarding and "Efficiency" benchmarking. [View PDF Memo](./docs/).
+* **Power BI:** Interactive dashboarding and "Efficiency" benchmarking.[View PDF Memo](./docs/Executive_Memo.pdf)
 * **Excel:** Initial data unpivoting and entity classification.
 
 ---
