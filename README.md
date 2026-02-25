@@ -19,7 +19,7 @@ Does higher education spending actually drive wealth? This study analyzes a deca
 ## 📂 Project Navigation
 * [**Executive Summary**](./main.doc) - High-level results and visual dashboard highlights.
 * [**SQL Analysis Scripts**](./data.cleaning.mysql) - The "Technical Engine" featuring window functions and CTEs.
-*[**Technical Deep-Dive**](./detailed.doc) - Full 20-page methodology including Excel unpivoting steps.
+* [**Technical Deep-Dive**](./detailed.doc) - Full 20-page methodology including Excel unpivoting steps.
 * [**Cleaned Dataset**](./data/cleaned_data.csv) - Processed data ready for replication.
 
 ---
